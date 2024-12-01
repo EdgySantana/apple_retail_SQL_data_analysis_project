@@ -1,5 +1,5 @@
-# Apple Retail Sales SQL Data Analysis Project
-
+# Apple Retail Sales - SQL Data Analysis Project
+![Apple Store](assets/Apple_RetailTeamMembers.jpg)
 ## Project Overview
 
 This project showcases advanced SQL querying techniques through the analysis of over 1 million rows of Apple retail sales data. The dataset I worked with included information about products, stores, sales transactions, and warranty claims across various Apple retail locations globally. By tackling a variety of questions, from basic to complex, I hope to demonstrate my ability to write sophisticated SQL queries that extract valuable insights from large datasets.
@@ -8,17 +8,20 @@ As an aspiring data analyst I thought this project was ideal to demonstrate my S
 
 ## Entity Relationship Diagram (ERD)
 
+![EDR](assets/EDR_apple_db.png)
+
 ---
 
 ### What this project features:
 
-- **20 Advanced SQL Queries**: solutions for complex queries, enhancing my SQL skills in performance tuning and optimization.
+- **20+ Advanced SQL Queries**: solutions for complex queries, enhancing my SQL skills in performance tuning and optimization.
 - **EDR of 5 Tables**: Namely sales, stores, product categories, products, and warranties.
 - **Query Performance Tuning**: Demonstrating how I optimized queries for real-world data handling.
 - **Portfolio-Ready Project**: Showcasing SQL expertise through large-scale data analysis.
 
-### Why I chose This Project?
+### Why Did I choose this Project?
 - **Hands-on Learning**: To gain practical experience with complex datasets and advanced business problem-solving.
+
 - **Comprehensive Coverage**: Each table provided me with new opportunities to explore SQL concepts.
 
 ## Database Schema
