@@ -261,54 +261,49 @@ ORDER BY
 -- Complex Problems
 -- Q.16 Determine the percentage chance of receiving warranty claims after each purchase for each country.
 
-SELECT
+SELECT 
     country,
     total_unit_sold,
     total_claim,
-    ROUND(COALESCE(total_claim::numeric/total_unit_sold::numeric * 100, 0),0)
-    as risk_percentage
-FROM
-(SELECT
-    st.country,
-    SUM(s.quantity) as total_unit_sold,
-    COUNT(w.claim_id) as total_claim
-FROM sales as s
-JOIN stores as st
-ON s.store_id = st.store_id
-LEFT JOIN
-warranty as w
-ON w.sale_id = s.sale_id
-GROUP BY 1) t1
-ORDER BY 4 DESC
+    ROUND(COALESCE(total_claim::NUMERIC / total_unit_sold::NUMERIC * 100, 0), 0) AS risk_percentage
+FROM (
+    SELECT 
+        st.country,
+        SUM(s.quantity) AS total_unit_sold,
+        COUNT(w.claim_id) AS total_claim
+    FROM sales AS s
+    JOIN stores AS st
+        ON s.store_id = st.store_id
+    LEFT JOIN warranty AS w
+        ON w.sale_id = s.sale_id
+    GROUP BY st.country
+) country_claims_summary
+ORDER BY risk_percentage DESC;
 
 -- Q.17 Analyze the year-by-year growth ratio for each store.
 -- find each store and yearly sales.
 
-WITH yearly_sales
-AS(
+WITH yearly_sales AS (
     SELECT
         s.store_id,
         st.store_name,
-        EXTRACT(YEAR FROM sale_date) as year,
-        SUM(s.quantity * p.price) as total_sale
-    FROM sales as s
-    JOIN
-    products as p
-    ON s.product_id = p.product_id
-    JOIN stores as st
-    ON st.store_id = s.store_id
-    GROUP BY 1, 2, 3
-    ORDER BY 2, 3
+        EXTRACT(YEAR FROM sale_date) AS year,
+        SUM(s.quantity * p.price) AS total_sale
+    FROM sales AS s
+    JOIN products AS p
+        ON s.product_id = p.product_id
+    JOIN stores AS st
+        ON st.store_id = s.store_id
+    GROUP BY s.store_id, st.store_name, year
+    ORDER BY st.store_name, year
 ),
-growth_ratio
-AS
-(
-SELECT
-    store_name,
-    year,
-    LAG(total_sale, 1) OVER(PARTITION BY store_name ORDER BY year)  as last_year_sale,
-    total_sale as current_year_sale
-FROM yearly_sales
+growth_ratio AS (
+    SELECT
+        store_name,
+        year,
+        LAG(total_sale, 1) OVER (PARTITION BY store_name ORDER BY year) AS last_year_sale,
+        total_sale AS current_year_sale
+    FROM yearly_sales
 )
 
 SELECT
@@ -317,15 +312,13 @@ SELECT
     last_year_sale,
     current_year_sale,
     ROUND(
-            (current_year_sale -last_year_sale)::numeric/
-                    last_year_sale::numeric * 100
-    ,2) as growth_ratio
+        (current_year_sale - last_year_sale)::NUMERIC /
+        last_year_sale::NUMERIC * 100, 2
+    ) AS growth_ratio
 FROM growth_ratio
 WHERE
     last_year_sale IS NOT NULL
-    AND
-    YEAR <> EXTRACT(YEAR FROM CURRENT_DATE)
-
+    AND year <> EXTRACT(YEAR FROM CURRENT_DATE);
 
 -- Q.18 Calculate the correlation between product price and warranty claims for 
 -- products sold in the last five years, segmented by price range.
@@ -396,8 +389,7 @@ JOIN
 JOIN 
     stores AS st
     ON tr.store_id = st.store_id
-ORDER BY 
-    percentage_paid_repaired DESC;
+
 
 -- Q.20 Calculate the monthly running total of sales for each store over the past four years and compare trends during this period.
 
@@ -415,18 +407,41 @@ WITH monthly_sales AS (
     WHERE 
         s.sale_date >= CURRENT_DATE - INTERVAL '4 years'
     GROUP BY 
-        s.store_id, EXTRACT(YEAR FROM s.sale_date), EXTRACT(MONTH FROM s.sale_date)
+        s.store_id, year, month
+    ORDER BY 
+        s.store_id, year, month
+),
+monthly_trends AS (
+    SELECT 
+        store_id,
+        year,
+        month,
+        total_revenue,
+        SUM(total_revenue) OVER (PARTITION BY store_id ORDER BY year, month) AS running_total,
+        LAG(total_revenue) OVER (PARTITION BY store_id ORDER BY year, month) AS previous_month_revenue
+    FROM 
+        monthly_sales
 )
 SELECT 
     store_id,
     year,
     month,
     total_revenue,
-    SUM(total_revenue) OVER (PARTITION BY store_id ORDER BY year, month) AS running_total
+    running_total,
+    previous_month_revenue,
+    ROUND(
+        CASE 
+            WHEN previous_month_revenue IS NOT NULL AND previous_month_revenue > 0 THEN
+                (total_revenue::numeric - previous_month_revenue::numeric) / previous_month_revenue::numeric * 100
+            ELSE 
+                NULL
+        END, 
+    2) AS month_over_month_change
 FROM 
-    monthly_sales
+    monthly_trends
 ORDER BY 
     store_id, year, month;
+
 
 -- Q.21 Analyze product sales trends over time, segmented into key periods: from launch date to 6 months, 6 to 12 months and from 12 to 18 months, and beyond 18 months.
 
@@ -448,6 +463,3 @@ GROUP BY
     p.product_name, product_life_cycle
 ORDER BY 
     p.product_name, total_quantity_sold DESC;
-
-
-
